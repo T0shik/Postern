@@ -1,0 +1,30 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{BF854686-0723-4BBF-B79E-5AD4E63A1E99}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{879C0961-2678-4968-B81E-547DBEE28F54}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KeyHole", "src\KeyHole\KeyHole.csproj", "{75F72760-3D04-4303-AD3A-52790D9D8E2F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleApp", "tests\SampleApp\SampleApp.csproj", "{75A0D257-2F64-4906-9F99-2405A90BEE33}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{75F72760-3D04-4303-AD3A-52790D9D8E2F} = {BF854686-0723-4BBF-B79E-5AD4E63A1E99}
+		{75A0D257-2F64-4906-9F99-2405A90BEE33} = {879C0961-2678-4968-B81E-547DBEE28F54}
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{75F72760-3D04-4303-AD3A-52790D9D8E2F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{75F72760-3D04-4303-AD3A-52790D9D8E2F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{75F72760-3D04-4303-AD3A-52790D9D8E2F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{75F72760-3D04-4303-AD3A-52790D9D8E2F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{75A0D257-2F64-4906-9F99-2405A90BEE33}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{75A0D257-2F64-4906-9F99-2405A90BEE33}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{75A0D257-2F64-4906-9F99-2405A90BEE33}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{75A0D257-2F64-4906-9F99-2405A90BEE33}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
