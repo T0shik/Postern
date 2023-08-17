@@ -12,6 +12,7 @@
     
     <ItemGroup>
       <PackageReference Include="HyperTextExpression.AspNetCore" Version="0.0.6" />
+      <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="4.6.0" />
     </ItemGroup>
 
 </Project>

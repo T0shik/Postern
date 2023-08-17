@@ -1,7 +1,37 @@
 using HyperTextExpression;
 using HyperTextExpression.AspNetCore;
+using Microsoft.CodeAnalysis.CSharp.Scripting;
+using Microsoft.CodeAnalysis.Scripting;
+using Microsoft.Extensions.FileProviders;
 using SampleApp;
 using static HyperTextExpression.HtmlExp;
+
+var editorJs =
+    $$$"""
+       var editor;
+        require.config({ paths: { vs: '../node_modules/monaco-editor/min/vs' } });
+              
+        require(['vs/editor/editor.main'], function () {
+              editor = monaco.editor.create(document.getElementById('editor'), {
+              value: "Console.WriteLine(\"Hello World\");",
+              language: 'csharp'
+              });
+        });
+        
+        function executeCode(){
+            const code = editor.getValue();
+            
+            return fetch("/_debug/execute", {
+                method: "POST",
+                headers: {
+                    'content-type': 'application/json'
+                },
+                body: JSON.stringify({
+                    code
+                })
+            })
+        }
+       """;
 
 var css = $$$"""
              :root {
@@ -17,9 +47,13 @@ var css = $$$"""
              }
 
              body {
-                display: flex;
                 background-color: var(--dark);
                 color: var(--primary);
+             }
+
+             #editor {
+                width: 800px;
+                height: 300px;
              }
 
              .value {
@@ -34,7 +68,6 @@ var css = $$$"""
                  color: var(--link-accent);
                  cursor: pointer;
              }
-
 
              .obj {
                 display: flex;
@@ -63,6 +96,14 @@ var css = $$$"""
              """;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddTransient<ScriptState>();
+builder.Services.AddSingleton<Endpoints>();
+builder.Services.AddSingleton(new Car("laaaada", "1980", 0));
+builder.Services.AddSingleton(new Functionality()
+{
+    NumberFn = () => 5,
+});
 var app = builder.Build();
 
 static HtmlEl PrintValue(object? val, bool recursive = false, DateTime? stamp = null)
@@ -121,10 +162,41 @@ static HtmlEl PrintValue(object? val, bool recursive = false, DateTime? stamp = 
         );
 }
 
+app.UseStaticFiles(new StaticFileOptions()
+{
+    FileProvider = new PhysicalFileProvider(
+        Path.Combine(builder.Environment.ContentRootPath, "node_modules")
+    ),
+    RequestPath = "/node_modules"
+});
+
+app.Use(async (ctx, next) =>
+{
+    var customEndpoints = ctx.RequestServices.GetRequiredService<Endpoints>();
+
+    if (customEndpoints.TryGetValue(ctx.Request.Path, out var endpoint))
+    {
+        var result = await endpoint();
+        await ctx.Response.WriteAsJsonAsync(result);
+    }
+    else
+    {
+        await next();
+    }
+});
+
 app.MapGet("/_debug", () =>
     HtmlDoc(
             Head(("style", css)),
             Body(
+                Div(
+                    Div(
+                        Attrs("id", "editor")
+                    ),
+                    Div(
+                        ("button", Attrs("onclick", "executeCode()"), "Run")
+                    )
+                ),
                 Div(
                     DumpContext.Instance.Entries.Select(x => PrintValue(x.Obj, stamp: x.Timestamp))
                 ),
@@ -132,7 +204,11 @@ app.MapGet("/_debug", () =>
                     Attrs("src", "https://unpkg.com/htmx.org@1.9.4",
                         "integrity", "sha384-zUfuhFKKZCbHTY6aRR46gxiqszMk5tcHjsVFxnUo8VMus4kHGVdIYVbOYYNlKmHV",
                         "crossorigin", "anonymous")
-                )
+                ),
+                ("script",
+                    Attrs("src", "/node_modules/monaco-editor/dev/vs/loader.js")
+                ),
+                ("script", editorJs)
             )
         )
         .ToIResult()
@@ -143,9 +219,28 @@ app.MapGet(
     (int hash) => PrintValue(DumpContext.Instance.GetCacheEntry(hash)).ToIResult()
 );
 
+app.MapPost("/_debug/execute", async (ExecuteCodeCommand command, ScriptState scriptState) =>
+    await CSharpScript.EvaluateAsync(
+        command.Code,
+        options: ScriptOptions.Default
+            .WithReferences(
+                typeof(Car).Assembly
+            )
+            .WithImports(
+                "System",
+                "System.Linq",
+                "System.Collections.Generic",
+                "System.Threading.Tasks",
+                "Microsoft.Extensions.DependencyInjection"
+            )
+        ,
+        globals: scriptState
+    )
+);
+
 app.MapGet("/", () =>
 {
-    new
+    var a = new
     {
         a = 5,
         b = "Hello World",
@@ -155,8 +250,8 @@ app.MapGet("/", () =>
             b = "Hello World",
         },
         d = DateTimeOffset.Now,
-    }.Dump();
-    return "Ok";
+    };
+    return a;
 });
 
 app.MapGet("/car", (string make, string year, int miles) =>
@@ -166,6 +261,42 @@ app.MapGet("/car", (string make, string year, int miles) =>
     return car;
 });
 
+app.MapGet("/lada", (Car car) => car);
+
+app.MapGet("/number", (Functionality func) => func.NumberFn());
+
 app.Run();
 
-public record Car(string Make, string Year, int Miles);
+public class Car
+{
+    public string Make { get; set; }
+    public string Year { get; set; }
+    public int Miles { get; set; }
+
+    public Car(string make, string year, int miles)
+    {
+        Make = make;
+        Year = year;
+        Miles = miles;
+    }
+}
+
+public record ExecuteCodeCommand(string Code);
+
+public class ScriptState
+{
+    public ScriptState(IServiceProvider services)
+    {
+        Services = services;
+    }
+
+    public IServiceProvider Services { get; }
+    public DumpContext Context => DumpContext.Instance;
+}
+
+public class Functionality
+{
+    public Func<int> NumberFn { get; set; }
+}
+
+public class Endpoints : Dictionary<string, Func<Task<object>>> { }
