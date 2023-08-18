@@ -24,7 +24,7 @@ public class DumpToHtml
             return Div(
                 ("a",
                     Attrs("class", "link",
-                        "hx-get", $"/_debug/obj/{val.GetHashCode()}",
+                        "hx-get", $"/_postern/obj/{val.GetHashCode()}",
                         "hx-swap", "outerHTML",
                         "hx-target", "this"
                     ),
