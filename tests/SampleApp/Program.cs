@@ -33,8 +33,6 @@ app.Use(async (ctx, next) =>
     }
 });
 
-
-app.MapGet("/res", () => typeof(Postern.PosternConfiguration).Assembly.GetManifestResourceInfo("Postern.static"));
 app.MapGet("/", () =>
 {
     var a = new
